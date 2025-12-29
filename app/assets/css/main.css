@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .form-input {
+    @apply block w-full rounded-md border-muted/50 bg-secondary/20 
+           py-2 pl-10 pr-10 text-sm text-dark placeholder:text-muted/80 
+           focus:border-primary focus:ring-1 focus:ring-primary 
+           dark:border-gray-600 dark:bg-gray-700 dark:text-base 
+           dark:placeholder:text-muted/70;
+  }
+}
