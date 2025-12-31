@@ -3,6 +3,7 @@ import { ref } from "vue";
 import type { Brand } from "~/types/brand";
 import BrandPreviewModal from "./BrandPreviewModal.vue";
 import notfoundAnim from "~/assets/animation/notfound.json";
+import { Vue3Lottie } from "vue3-lottie";
 
 defineProps<{
   brands: Brand[];
@@ -25,103 +26,139 @@ function openPreview(brand: Brand) {
 </script>
 
 <template>
-  <div class="overflow-x-auto rounded-lg border border-gray-200 shadow-sm dark:border-gray-700">
-    <table class="min-w-full">
-      <thead class="bg-gray-50 dark:bg-gray-900">
-        <tr>
-          <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Preview</th>
-          <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Nama Brand</th>
-          <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Deskripsi</th>
-          <th scope="col" class="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Status</th>
-          <th scope="col" class="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Aksi</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
-        <template v-if="loading">
-          <tr v-for="n in 3" :key="'skeleton-' + n">
-            <td class="px-6 py-4">
-              <div class="h-10 w-20 rounded-md bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <div class="h-4 w-1/2 rounded bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <div class="h-4 w-3/4 rounded bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
-            </td>
-            <td class="px-6 py-4 text-center">
-              <div class="mx-auto h-6 w-16 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-              <div class="flex justify-center space-x-3">
-                <div class="h-5 w-5 rounded bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
-                <div class="h-5 w-5 rounded bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
+  <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead class="bg-gray-50 dark:bg-gray-900/50">
+          <tr>
+            <th scope="col" class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              Preview
+            </th>
+            <th scope="col" class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              Nama Brand
+            </th>
+            <th scope="col" class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              Deskripsi
+            </th>
+            <th scope="col" class="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              Status
+            </th>
+            <th scope="col" class="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              Aksi
+            </th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
+          
+          <template v-if="loading">
+            <tr v-for="n in 5" :key="'skeleton-' + n" class="animate-pulse">
+              <td class="px-6 py-4">
+                <div class="h-10 w-20 rounded bg-gray-200 dark:bg-gray-700"></div>
+              </td>
+              <td class="px-6 py-4">
+                <div class="h-4 w-32 rounded bg-gray-200 dark:bg-gray-700"></div>
+              </td>
+              <td class="px-6 py-4">
+                <div class="h-4 w-48 rounded bg-gray-200 dark:bg-gray-700"></div>
+              </td>
+              <td class="px-6 py-4 text-center">
+                <div class="mx-auto h-6 w-20 rounded-full bg-gray-200 dark:bg-gray-700"></div>
+              </td>
+              <td class="px-6 py-4 text-right">
+                <div class="flex justify-end gap-3">
+                  <div class="h-8 w-8 rounded bg-gray-200 dark:bg-gray-700"></div>
+                  <div class="h-8 w-8 rounded bg-gray-200 dark:bg-gray-700"></div>
+                </div>
+              </td>
+            </tr>
+          </template>
+
+          <tr v-else-if="brands.length === 0">
+            <td colspan="5" class="px-6 py-12 text-center">
+              <div class="flex flex-col items-center justify-center">
+                <ClientOnly>
+                  <Vue3Lottie :animationData="notfoundAnim" :height="160" :width="160" />
+                </ClientOnly>
+                <p class="mt-4 text-sm font-medium text-gray-500 dark:text-gray-400">Belum ada brand yang ditemukan.</p>
               </div>
             </td>
           </tr>
-        </template>
 
-        <tr v-else-if="brands.length === 0">
-          <td colspan="4" class="px-6 py-10 text-center">
-            <div class="flex flex-col items-center justify-center">
-              <ClientOnly>
-                <Vue3Lottie :animationData="notfoundAnim" :height="200" :width="200" />
-              </ClientOnly>
-              <p class="mt-4 text-gray-500 dark:text-gray-400">Belum ada data brand</p>
-            </div>
-          </td>
-        </tr>
-
-        <template v-else>
-          <tr v-for="brand in brands" :key="brand.id" class="transition-colors duration-200 ease-in-out hover:bg-gray-50/50 dark:hover:bg-gray-700/50">
-            <td class="px-6 py-4">
-              <button
-                @click="openPreview(brand)"
-                class="rounded-md transition-all duration-200 ease-in-out-smooth focus:outline-none focus:ring-2 focus:ring-primary/60 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800"
-                aria-label="Lihat preview brand"
-              >
-                <img :src="brand.logoUrl" :alt="brand.name" class="h-10 w-20 rounded-md object-cover transition-transform duration-200 hover:scale-110" />
-              </button>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm font-medium text-dark dark:text-base">{{ brand.name }}</div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm text-muted dark:text-gray-400">{{ brand.description }}</div>
-            </td>
-            <td class="px-6 py-4 text-center">
-              <button
-                @click="emit('toggleStatus', brand)"
-                class="rounded-full transition-all duration-200 ease-in-out-smooth focus:outline-none focus:ring-2 focus:ring-primary/60 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800"
-              >
-                <span
-                  :class="brand.isActive ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200'"
-                  class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold leading-5"
+          <template v-else>
+            <tr 
+              v-for="brand in brands" 
+              :key="brand.id" 
+              class="group transition-colors duration-200 hover:bg-gray-50/80 dark:hover:bg-gray-700/50"
+            >
+              <td class="px-6 py-4 align-middle">
+                <button
+                  @click="openPreview(brand)"
+                  class="relative block overflow-hidden rounded-lg shadow-sm transition-transform duration-300 hover:scale-105 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  title="Klik untuk memperbesar"
                 >
-                  {{ brand.isActive ? "Aktif" : "Nonaktif" }}
-                </span>
-              </button>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-3">
-              <button
-                @click="emit('edit', brand)"
-                aria-label="Edit brand"
-                class="rounded p-1 text-accent transition-all duration-200 ease-in-out-smooth hover:text-primary dark:text-accent/90 dark:hover:text-base focus:outline-none focus:ring-2 focus:ring-primary/60 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800"
-              >
-                <Icon name="lucide:edit" class="h-5 w-5" />
-              </button>
-              <button
-                @click="emit('delete', brand)"
-                aria-label="Hapus brand"
-                class="rounded p-1 text-red-500 transition-all duration-200 ease-in-out-smooth hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 focus:outline-none focus:ring-2 focus:ring-red-500/60 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800"
-              >
-                <Icon name="lucide:trash" class="h-5 w-5" />
-              </button>
-            </td>
-          </tr>
-        </template>
-      </tbody>
-    </table>
+                  <img 
+                    :src="brand.logoUrl" 
+                    :alt="brand.name" 
+                    class="h-10 w-20 object-contain bg-gray-50 dark:bg-gray-700" 
+                    loading="lazy"
+                  />
+                  <div class="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/10">
+                    <Icon name="lucide:eye" class="h-4 w-4 text-white opacity-0 transition-opacity group-hover:opacity-100" />
+                  </div>
+                </button>
+              </td>
 
-    <BrandPreviewModal v-model="showPreviewModal" :logo-url="brandToPreview?.logoUrl" :brand-name="brandToPreview?.name || null" :brand-description="brandToPreview?.description || null" />
+              <td class="px-6 py-4 align-middle">
+                <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ brand.name }}</div>
+              </td>
+
+              <td class="px-6 py-4 align-middle">
+                <div class="line-clamp-2 text-sm text-gray-500 dark:text-gray-400">{{ brand.description || '-' }}</div>
+              </td>
+
+              <td class="px-6 py-4 text-center align-middle whitespace-nowrap">
+                <button
+                  @click="emit('toggleStatus', brand)"
+                  class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                  :class="brand.isActive 
+                    ? 'bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50 focus:ring-green-600' 
+                    : 'bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-500/10 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 focus:ring-gray-500'"
+                  title="Klik untuk mengubah status"
+                >
+                  <span class="mr-1.5 h-1.5 w-1.5 rounded-full" :class="brand.isActive ? 'bg-green-500' : 'bg-gray-400'"></span>
+                  {{ brand.isActive ? "Aktif" : "Nonaktif" }}
+                </button>
+              </td>
+
+              <td class="px-6 py-4 text-right align-middle whitespace-nowrap">
+                <div class="flex items-center justify-end gap-2">
+                  <button 
+                    @click="emit('edit', brand)" 
+                    class="rounded-lg p-2 text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-gray-400 dark:hover:bg-blue-900/30 dark:hover:text-blue-400"
+                    title="Edit Brand"
+                  >
+                    <Icon name="lucide:edit-2" class="h-4 w-4" />
+                  </button>
+                  <button 
+                    @click="emit('delete', brand)" 
+                    class="rounded-lg p-2 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500/50 dark:text-gray-400 dark:hover:bg-red-900/30 dark:hover:text-red-400"
+                    title="Hapus Brand"
+                  >
+                    <Icon name="lucide:trash-2" class="h-4 w-4" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
+
+    <BrandPreviewModal 
+      v-model="showPreviewModal" 
+      :logo-url="brandToPreview?.logoUrl" 
+      :brand-name="brandToPreview?.name || null" 
+      :brand-description="brandToPreview?.description || null"
+    />
   </div>
 </template>

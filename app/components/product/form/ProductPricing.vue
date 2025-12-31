@@ -8,7 +8,7 @@ const resellerPrice = defineModel<number>("resellerPrice");
 const discountPrice = defineModel<number>("discountPrice");
 
 const formatCurrency = (value: number | undefined | null): string => {
-  if (!value) return "";
+  if (!value && value !== 0) return "";
   return value.toLocaleString("id-ID");
 };
 
@@ -16,23 +16,19 @@ const parseCurrency = (value: string): number => {
   return parseInt(value.replace(/[^0-9]/g, ""), 10) || 0;
 };
 
+// Local state untuk display string (dengan titik)
 const localRetail = ref(formatCurrency(retailPrice.value));
 const localWholesale = ref(formatCurrency(wholesalePrice.value));
 const localReseller = ref(formatCurrency(resellerPrice.value));
 const localDiscount = ref(formatCurrency(discountPrice.value));
 
-watch(localRetail, (newVal) => {
-  retailPrice.value = parseCurrency(newVal);
-});
-watch(localWholesale, (newVal) => {
-  wholesalePrice.value = parseCurrency(newVal);
-});
-watch(localReseller, (newVal) => {
-  resellerPrice.value = parseCurrency(newVal);
-});
-watch(localDiscount, (newVal) => {
-  discountPrice.value = parseCurrency(newVal);
-});
+// --- WATCHERS: Local Input -> Update Model (Number) ---
+watch(localRetail, (newVal) => { retailPrice.value = parseCurrency(newVal); });
+watch(localWholesale, (newVal) => { wholesalePrice.value = parseCurrency(newVal); });
+watch(localReseller, (newVal) => { resellerPrice.value = parseCurrency(newVal); });
+watch(localDiscount, (newVal) => { discountPrice.value = parseCurrency(newVal); });
+
+// --- WATCHERS: Model Change (API load) -> Update Local Input ---
 watch(retailPrice, (newModelVal) => {
   const formatted = formatCurrency(newModelVal);
   if (localRetail.value !== formatted) localRetail.value = formatted;
@@ -52,45 +48,88 @@ watch(discountPrice, (newModelVal) => {
 </script>
 
 <template>
-  <ProductCard title="Harga" description="Atur harga grosir, retail, dan diskon.">
+  <ProductCard title="Harga Produk" description="Atur strategi harga untuk berbagai tipe pelanggan.">
     <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+      
       <div>
-        <label for="wholesale-price" class="block text-sm font-medium text-dark/80 dark:text-base/80"> Harga Grosir (Group)</label>
-        <div class="relative mt-1">
-          <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-muted">Rp</span>
-          <input v-model="localWholesale" id="wholesale-price" type="text" placeholder="0" class="form-input pl-10 text-right" />
+        <label for="retail-price" class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+          Harga Marketplace (Umum)
+        </label>
+        <div class="relative">
+          <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+            <span class="text-sm font-bold text-gray-400">Rp</span>
+          </div>
+          <input 
+            v-model="localRetail" 
+            id="retail-price" 
+            type="text" 
+            placeholder="0" 
+            class="form-input pl-10 text-right font-mono" 
+          />
         </div>
       </div>
 
       <div>
-        <label for="reseller-price" class="block text-sm font-medium text-dark/80 dark:text-base/80"> Harga Reseller </label>
-        <div class="relative mt-1">
-          <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-muted">Rp</span>
-          <input v-model="localReseller" id="reseller-price" type="text" placeholder="0" class="form-input pl-10 text-right" />
+        <label for="discount-price" class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+          Harga Coret / Asli
+        </label>
+        <div class="relative">
+          <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+            <span class="text-sm font-bold text-gray-400">Rp</span>
+          </div>
+          <input 
+            v-model="localDiscount" 
+            id="discount-price" 
+            type="text" 
+            placeholder="0" 
+            class="form-input pl-10 text-right font-mono" 
+          />
+        </div>
+        <p class="mt-1 text-[10px] text-gray-400">*Isi lebih tinggi dari harga marketplace untuk efek diskon.</p>
+      </div>
+
+      <div>
+        <label for="reseller-price" class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+          Harga Reseller
+        </label>
+        <div class="relative">
+          <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+            <span class="text-sm font-bold text-gray-400">Rp</span>
+          </div>
+          <input 
+            v-model="localReseller" 
+            id="reseller-price" 
+            type="text" 
+            placeholder="0" 
+            class="form-input pl-10 text-right font-mono" 
+          />
         </div>
       </div>
 
       <div>
-        <label for="retail-price" class="block text-sm font-medium text-dark/80 dark:text-base/80"> Harga Marketplace </label>
-        <div class="relative mt-1">
-          <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-muted">Rp</span>
-          <input v-model="localRetail" id="retail-price" type="text" placeholder="0" class="form-input pl-10 text-right" />
+        <label for="wholesale-price" class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+          Harga Grosir / Partai
+        </label>
+        <div class="relative">
+          <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+            <span class="text-sm font-bold text-gray-400">Rp</span>
+          </div>
+          <input 
+            v-model="localWholesale" 
+            id="wholesale-price" 
+            type="text" 
+            placeholder="0" 
+            class="form-input pl-10 text-right font-mono" 
+          />
         </div>
       </div>
 
-      <div>
-        <label for="discount-price" class="block text-sm font-medium text-dark/80 dark:text-base/80"> Harga Retail </label>
-        <div class="relative mt-1">
-          <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-muted">Rp</span>
-          <input v-model="localDiscount" id="discount-price" type="text" placeholder="0" class="form-input pl-10 text-right" />
-        </div>
-      </div>
     </div>
   </ProductCard>
 </template>
 
 <style scoped>
 .form-input {
-  @apply block w-full rounded-md border-muted/50 bg-secondary/20 px-4 py-2.5 text-sm text-dark placeholder:text-muted/50 dark:border-gray-600 dark:bg-gray-700 dark:text-sm dark:text-base dark:placeholder:text-muted/70 focus:border-primary focus:ring-1 focus:ring-primary;
+  @apply block w-full rounded-lg border-gray-200 bg-white py-2.5 px-4 text-sm text-gray-900 placeholder-gray-400 focus:border-primary focus:bg-white focus:ring-primary dark:border-gray-600 dark:bg-gray-900 dark:text-white dark:placeholder-gray-500 transition-all shadow-sm;
 }
 </style>

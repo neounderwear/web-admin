@@ -98,16 +98,17 @@ export const useOrders = () => {
     };
 
     const chargePayment = async (chargeData: any) => {
-        try {
-            const data = await $fetch('/api/payment/charge', {
-                method: 'POST',
-                body: chargeData
-            })
-            return data;
-        } catch (e) {
-            throw e;
-        }
+    try {
+      const data = await $fetch("/api/payment/charge", {
+        method: "POST",
+        body: chargeData,
+      });
+      return data;
+    } catch (error) {
+      console.error("Charge Error:", error);
+      throw error;
     }
+  };
 
     const getBaseQuery = () => {
         if (searchQuery.value) {
@@ -273,5 +274,6 @@ export const useOrders = () => {
         fetchNextPage,
         fetchPrevPage,
         searchQuery,
+        chargePayment,
     };
 };

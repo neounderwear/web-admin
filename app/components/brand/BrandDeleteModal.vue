@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { watch, onUnmounted } from 'vue';
+
 const props = defineProps<{
   modelValue: boolean;
   brandName: string;
@@ -12,56 +14,94 @@ const emit = defineEmits<{
 }>();
 
 function close() {
-  emit("update:modelValue", false);
+  if (!props.loading) {
+    emit("update:modelValue", false);
+  }
 }
+
+// Prevent body scroll when modal is open
+watch(() => props.modelValue, (isOpen) => {
+  if (typeof document !== 'undefined') {
+    document.body.style.overflow = isOpen ? 'hidden' : '';
+  }
+});
+
+onUnmounted(() => {
+  if (typeof document !== 'undefined') {
+    document.body.style.overflow = '';
+  }
+});
 </script>
 
 <template>
-  <transition name="fade">
-    <div v-if="modelValue" class="fixed inset-0 z-50 flex items-center justify-center bg-dark/50 p-4 transition-opacity duration-300 ease-in-out-smooth dark:bg-black/70" @click.self="close">
-      <transition name="pop">
-        <div v-if="modelValue" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-desc" class="relative w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800">
-          <button type="button" @click="close" class="absolute top-4 right-4 rounded-full p-1 text-muted transition-colors hover:bg-secondary/30 hover:text-dark dark:text-muted/70 dark:hover:bg-dark dark:hover:text-base">
-            <span class="sr-only">Tutup</span>
-            <Icon name="lucide:x" class="h-5 w-5" />
-          </button>
+  <transition name="fade" appear>
+    <div 
+      v-if="modelValue" 
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+    >
+      <div 
+        class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" 
+        @click="close"
+      ></div>
 
-          <div class="flex justify-center">
-            <div class="rounded-full bg-red-100 p-3 dark:bg-red-900/50">
-              <Icon name="lucide:alert-triangle" class="h-6 w-6 text-red-600 dark:text-red-400" />
+      <transition name="zoom" appear>
+        <div 
+          v-if="modelValue" 
+          role="dialog" 
+          aria-modal="true" 
+          aria-labelledby="modal-title" 
+          aria-describedby="modal-desc" 
+          class="relative w-full max-w-sm overflow-hidden rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/10"
+        >
+          <div class="absolute right-4 top-4">
+            <button 
+              type="button" 
+              @click="close" 
+              :disabled="loading"
+              class="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+            >
+              <span class="sr-only">Tutup</span>
+              <Icon name="lucide:x" class="h-5 w-5" />
+            </button>
+          </div>
+
+          <div class="text-center">
+            <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+              <Icon name="lucide:alert-triangle" class="h-6 w-6 text-red-600 dark:text-red-500" />
+            </div>
+
+            <div class="mt-4">
+              <h3 id="modal-title" class="text-lg font-semibold leading-6 text-gray-900 dark:text-white">
+                Hapus Brand?
+              </h3>
+              <div id="modal-desc" class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                <p>Apakah Anda yakin ingin menghapus brand <span class="font-semibold text-gray-900 dark:text-gray-200">"{{ brandName }}"</span>?</p>
+                <p class="mt-1 text-xs text-red-500/80">Data yang dihapus tidak dapat dikembalikan.</p>
+              </div>
             </div>
           </div>
 
-          <div class="mt-4 text-center">
-            <h2 id="modal-title" class="text-xl font-bold text-dark dark:text-base">Konfirmasi Hapus</h2>
-            <p id="modal-desc" class="mt-2 text-sm text-muted dark:text-gray-300">
-              Yakin mau hapus brand
-              <strong class="font-medium text-dark dark:text-base/90">"{{ brandName }}"</strong>?
-              <br />
-              Brand bakal dihapus permanen
-            </p>
-          </div>
-
-          <div class="mt-6 flex justify-center space-x-3">
-            <button
-              type="button"
-              @click="close"
-              class="rounded-md border border-muted/50 bg-white px-4 py-2 text-sm font-medium text-dark/80 shadow-sm transition-all duration-150 ease-in-out-smooth hover:bg-secondary/20 dark:border-muted/30 dark:bg-gray-800 dark:text-base/80 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
-            >
-              Batal
-            </button>
-
+          <div class="mt-6 flex flex-col gap-3 sm:flex-row-reverse">
             <button
               type="button"
               @click="emit('confirm')"
               :disabled="loading"
-              class="inline-flex justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all duration-150 ease-in-out-smooth hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-muted/50 dark:bg-red-500 dark:hover:bg-red-400 dark:focus:ring-offset-gray-800"
+              class="inline-flex w-full justify-center rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-red-600 dark:hover:bg-red-500 dark:focus:ring-offset-gray-800 sm:w-auto sm:flex-1"
             >
-              <span v-if="!loading"> Ya, Hapus </span>
-              <span v-else class="flex items-center">
-                <Icon name="lucide:loader-2" class="mr-2 h-4 w-4 animate-spin" />
-                Menghapus...
+              <span v-if="!loading">Hapus Permanen</span>
+              <span v-else class="flex items-center gap-2">
+                <Icon name="lucide:loader-2" class="h-4 w-4 animate-spin" />
+                <span>Menghapus...</span>
               </span>
+            </button>
+            
+            <button
+              type="button"
+              @click="close"
+              :disabled="loading"
+              class="inline-flex w-full justify-center rounded-lg bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-gray-700 dark:text-gray-200 dark:ring-gray-600 dark:hover:bg-gray-600 sm:w-auto sm:flex-1"
+            >
+              Batal
             </button>
           </div>
         </div>
@@ -71,24 +111,26 @@ function close() {
 </template>
 
 <style scoped>
+/* Backdrop Fade */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.3s ease;
 }
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
 }
 
-.pop-enter-active {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* Modal Zoom/Pop */
+.zoom-enter-active {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.pop-leave-active {
+.zoom-leave-active {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.pop-enter-from,
-.pop-leave-to {
+.zoom-enter-from,
+.zoom-leave-to {
   opacity: 0;
-  transform: scale(0.95);
+  transform: scale(0.95) translateY(10px);
 }
 </style>

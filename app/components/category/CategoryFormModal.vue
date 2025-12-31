@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed } from "vue";
+import { ref, watch, computed, onUnmounted } from "vue";
 import type { Category } from "~/types/category";
 
 interface EmittedData {
@@ -23,6 +23,7 @@ const isEditing = computed(() => !!props.categoryToEdit);
 const initialFormData = { name: "", description: "", isActive: true };
 const formData = ref({ ...initialFormData });
 
+// Watcher to populate form or reset it
 watch(
   () => props.modelValue,
   (isOpen) => {
@@ -36,9 +37,18 @@ watch(
       } else {
         formData.value = { ...initialFormData };
       }
+      // Lock body scroll
+      if (typeof document !== 'undefined') document.body.style.overflow = 'hidden';
+    } else {
+      // Unlock body scroll
+      if (typeof document !== 'undefined') document.body.style.overflow = '';
     }
   }
 );
+
+onUnmounted(() => {
+  if (typeof document !== 'undefined') document.body.style.overflow = '';
+});
 
 function close() {
   emit("update:modelValue", false);
@@ -55,74 +65,115 @@ function handleSubmit() {
 
 <template>
   <transition name="fade">
-    <div v-if="modelValue" class="fixed inset-0 z-40 flex items-center justify-center bg-dark/50 p-4 transition-opacity duration-300 ease-in-out-smooth dark:bg-black/70" @click.self="close">
-      <transition name="pop">
-        <div v-if="modelValue" role="dialog" aria-modal="true" aria-labelledby="modal-title" class="relative w-full max-w-lg rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800">
-          <button type="button" @click="close" class="absolute top-4 right-4 rounded-full p-1 text-muted transition-colors hover:bg-secondary/30 hover:text-dark dark:text-muted/70 dark:hover:bg-dark dark:hover:text-base">
-            <span class="sr-only">Tutup modal</span>
-            <Icon name="lucide:x" class="h-5 w-5" />
-          </button>
+    <div 
+      v-if="modelValue" 
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+    >
+      <div 
+        class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" 
+        @click="close"
+      ></div>
 
-          <h2 id="modal-title" class="text-xl font-bold mb-4 text-dark dark:text-base">
-            {{ isEditing ? "Edit Kategori" : "Tambah Kategori Baru" }}
-          </h2>
-          <form @submit.prevent="handleSubmit">
-            <div class="mb-4">
-              <label for="name" class="block text-sm font-medium text-dark/80 dark:text-base/80"> Nama Kategori </label>
-              <input
-                v-model="formData.name"
-                id="name"
-                type="text"
-                required
-                class="mt-1 block w-full rounded-md border-muted/50 bg-secondary/20 px-4 py-2.5 text-sm text-dark transition-all duration-150 ease-in-out-smooth placeholder:text-muted/50 dark:border-gray-600 dark:bg-gray-700 dark:text-sm dark:text-base dark:placeholder:text-muted/70 focus:border-primary focus:ring-1 focus:ring-primary"
-              />
-            </div>
-            <div class="mb-4">
-              <label for="description" class="block text-sm font-medium text-dark/80 dark:text-base/80"> Deskripsi </label>
-              <input
-                v-model="formData.description"
-                id="description"
-                type="text"
-                required
-                class="mt-1 block w-full rounded-md border-muted/50 bg-secondary/20 px-4 py-2.5 text-sm text-dark transition-all duration-150 ease-in-out-smooth placeholder:text-muted/50 dark:border-gray-600 dark:bg-gray-700 dark:text-sm dark:text-base dark:placeholder:text-muted/70 focus:border-primary focus:ring-1 focus:ring-primary"
-              />
-            </div>
-
-            <div class="mb-4">
-              <label class="block text-sm font-medium text-dark/80 dark:text-base/80"> Status </label>
-              <button
-                type="button"
-                @click="formData.isActive = !formData.isActive"
-                :class="formData.isActive ? 'bg-primary' : 'bg-muted/50 dark:bg-muted/30'"
-                class="relative mt-1 inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out-smooth focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+      <transition name="zoom">
+        <div 
+          v-if="modelValue" 
+          role="dialog" 
+          aria-modal="true" 
+          class="relative w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/10"
+        >
+          <div class="border-b border-gray-100 bg-gray-50/50 px-6 py-4 dark:border-gray-700 dark:bg-gray-800/50">
+            <div class="flex items-center justify-between">
+              <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                {{ isEditing ? "Edit Kategori" : "Tambah Kategori Baru" }}
+              </h2>
+              <button 
+                type="button" 
+                @click="close" 
+                class="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/50 dark:hover:bg-gray-700 dark:hover:text-gray-300"
               >
-                <span class="sr-only">Ubah status</span>
-                <span :class="formData.isActive ? 'translate-x-5' : 'translate-x-0'" class="inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out-smooth"></span>
+                <Icon name="lucide:x" class="h-5 w-5" />
               </button>
-              <span class="ml-3 text-sm text-dark/80 dark:text-base/80">
-                {{ formData.isActive ? "Aktif" : "Nonaktif" }}
-              </span>
+            </div>
+          </div>
+
+          <form @submit.prevent="handleSubmit" class="p-6">
+            <div class="space-y-5">
+              
+              <div>
+                <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                  Nama Kategori
+                </label>
+                <div class="relative">
+                  <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                    <Icon name="lucide:tag" class="h-4 w-4 text-gray-400" />
+                  </div>
+                  <input
+                    v-model="formData.name"
+                    id="name"
+                    type="text"
+                    required
+                    placeholder="Contoh: Elektronik"
+                    class="block w-full rounded-lg border-gray-300 bg-white py-2.5 pl-10 pr-3 text-sm text-gray-900 placeholder-gray-400 focus:border-primary focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                  Deskripsi
+                </label>
+                <div class="relative">
+                  <div class="pointer-events-none absolute inset-y-0 left-0 flex items-start pt-3 pl-3">
+                    <Icon name="lucide:file-text" class="h-4 w-4 text-gray-400" />
+                  </div>
+                  <textarea
+                    v-model="formData.description"
+                    id="description"
+                    rows="3"
+                    required
+                    placeholder="Deskripsi singkat kategori..."
+                    class="block w-full rounded-lg border-gray-300 bg-white py-2.5 pl-10 pr-3 text-sm text-gray-900 placeholder-gray-400 focus:border-primary focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-500 resize-none"
+                  ></textarea>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between">
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status Aktif</label>
+                  <button
+                    type="button"
+                    @click="formData.isActive = !formData.isActive"
+                    :class="formData.isActive ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-600'"
+                    class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                    role="switch"
+                    :aria-checked="formData.isActive"
+                  >
+                    <span 
+                      aria-hidden="true" 
+                      :class="formData.isActive ? 'translate-x-5' : 'translate-x-0'" 
+                      class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                    ></span>
+                  </button>
+                </div>
+              </div>
+
             </div>
 
-            <div class="flex justify-end space-x-3 pt-4">
+            <div class="mt-8 flex items-center justify-end gap-3 border-t border-gray-100 pt-5 dark:border-gray-700">
               <button
                 type="button"
                 @click="close"
-                class="rounded-md border border-muted/50 bg-white px-4 py-2 text-sm font-medium text-dark/80 shadow-sm transition-all duration-150 ease-in-out-smooth hover:bg-secondary/20 dark:border-muted/30 dark:bg-gray-800 dark:text-base/80 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
               >
                 Batal
               </button>
-
               <button
                 type="submit"
                 :disabled="loading"
-                class="inline-flex justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm transition-all duration-150 ease-in-out-smooth hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-muted/50 dark:focus:ring-offset-gray-800"
+                class="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed dark:focus:ring-offset-gray-800"
               >
-                <span v-if="!loading"> Simpan </span>
-                <span v-else class="flex items-center">
-                  <Icon name="lucide:loader-2" class="mr-2 h-4 w-4 animate-spin" />
-                  Menyimpan...
-                </span>
+                <Icon v-if="loading" name="lucide:loader-2" class="mr-2 h-4 w-4 animate-spin" />
+                {{ loading ? 'Menyimpan...' : 'Simpan Kategori' }}
               </button>
             </div>
           </form>
@@ -133,24 +184,26 @@ function handleSubmit() {
 </template>
 
 <style scoped>
+/* Backdrop Fade */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.3s ease;
 }
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
 }
 
-.pop-enter-active {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* Modal Zoom/Pop */
+.zoom-enter-active {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.pop-leave-active {
+.zoom-leave-active {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.pop-enter-from,
-.pop-leave-to {
+.zoom-enter-from,
+.zoom-leave-to {
   opacity: 0;
-  transform: scale(0.95);
+  transform: scale(0.95) translateY(10px);
 }
 </style>

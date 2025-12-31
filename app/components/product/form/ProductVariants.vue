@@ -5,11 +5,13 @@ import type { ProductVariant, ProductVariantValue } from "~/types/product";
 
 const variants = defineModel<ProductVariant[]>("variants", { required: true });
 const totalStock = defineModel<number>("totalStock", { required: true });
+
 const newVariantType = ref("");
 const newValues = ref<{ [typeIndex: number]: string }>({});
 
+// --- LOGIKA VARIAN ---
 function addVariantType() {
-  if (!newVariantType.value) return;
+  if (!newVariantType.value.trim()) return;
   variants.value.push({
     type: newVariantType.value,
     typeLowerCase: newVariantType.value.toLowerCase(),
@@ -23,7 +25,7 @@ function removeVariantType(index: number) {
 }
 
 function addVariantValue(typeIndex: number) {
-  const value = newValues.value[typeIndex];
+  const value = newValues.value[typeIndex]?.trim();
   if (!value) return;
 
   const variant = variants.value[typeIndex];
@@ -44,6 +46,8 @@ function removeVariantValue(typeIndex: number, valueIndex: number) {
   }
 }
 
+// --- LOGIKA STOK ---
+// Hitung total stok otomatis setiap ada perubahan di sub-stok varian
 watchEffect(() => {
   let stock = 0;
   if (variants.value.length === 0) {
@@ -59,81 +63,162 @@ watchEffect(() => {
 });
 
 function updateStock(e: Event, val: ProductVariantValue) {
-  val.stock = parseInt((e.target as HTMLInputElement).value) || 0;
+  const inputVal = parseInt((e.target as HTMLInputElement).value);
+  val.stock = isNaN(inputVal) || inputVal < 0 ? 0 : inputVal;
 }
 </script>
 
 <template>
-  <ProductCard title="Varian & Stok" description="Kelola varian dan inventaris produk.">
-    <div class="mb-4 rounded-md border border-yellow-300 bg-yellow-50 p-3 dark:border-yellow-700 dark:bg-yellow-900/30">
-      <p class="text-sm text-yellow-800 dark:text-yellow-200"><strong class="font-semibold">Stok Keseluruhan</strong> (di tabel produk) dihitung otomatis dari total stok semua varian di bawah.</p>
-      <p class="mt-2 text-sm text-yellow-800 dark:text-yellow-200">Kalo produk nggak punya varian (hanya 1 SKU), buat satu tipe varian (mis: "Ukuran") dengan satu nilai (mis: "Freesize") dan masukkin SKU serta stok di sana.</p>
+  <ProductCard title="Varian & Stok" description="Kelola varian produk (Warna, Ukuran) dan stok masing-masing.">
+    
+    <div class="mb-6 rounded-lg border border-blue-100 bg-blue-50 p-4 dark:border-blue-900/30 dark:bg-blue-900/10">
+      <div class="flex gap-3">
+        <Icon name="lucide:info" class="h-5 w-5 flex-shrink-0 text-blue-600 dark:text-blue-400" />
+        <div class="text-sm text-blue-800 dark:text-blue-200">
+          <p class="font-semibold mb-1">Catatan Penting:</p>
+          <ul class="list-disc pl-4 space-y-1">
+            <li><strong>Stok Total</strong> akan dihitung otomatis dari penjumlahan stok semua varian di bawah ini.</li>
+            <li>Jika produk ini <strong>tidak memiliki varian</strong> (Single SKU), cukup buat satu tipe varian (contoh: "Standard") dengan satu nilai (contoh: "All Size").</li>
+          </ul>
+        </div>
+      </div>
     </div>
 
-    <div class="space-y-6">
-      <div v-for="(variant, typeIndex) in variants" :key="typeIndex" class="space-y-6 rounded-lg border border-muted/50 p-6">
-        <div class="flex justify-between items-center">
-          <h4 class="font-semibold text-lg text-dark dark:text-base">{{ variant.type }}</h4>
-          <button @click="removeVariantType(typeIndex)" type="button" class="rounded-md p-1 text-red-500 transition-colors hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
-            <Icon name="lucide:trash" class="h-4 w-4" />
+    <div class="space-y-8">
+      
+      <div v-for="(variant, typeIndex) in variants" :key="typeIndex" class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        
+        <div class="flex items-center justify-between border-b border-gray-100 bg-gray-50/50 px-5 py-3 dark:border-gray-700 dark:bg-gray-800/50">
+          <h4 class="font-bold text-gray-900 dark:text-white">{{ variant.type }}</h4>
+          <button 
+            @click="removeVariantType(typeIndex)" 
+            type="button" 
+            class="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-md transition-colors"
+            title="Hapus Tipe Varian"
+          >
+            <Icon name="lucide:trash-2" class="h-4 w-4" />
           </button>
         </div>
 
-        <div class="overflow-x-auto rounded-md border dark:border-gray-700">
-          <table class="min-w-full">
-            <thead class="bg-gray-50 dark:bg-gray-900">
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-100 dark:divide-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-900/50">
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Nilai Varian</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">SKU</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Stok</th>
-                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">Hapus</th>
+                <th class="px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Nama Varian</th>
+                <th class="px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">SKU (Unik)</th>
+                <th class="px-5 py-3 text-center text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Stok</th>
+                <th class="px-5 py-3 text-center text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Aksi</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-200 bg-secondary/20 dark:divide-gray-700 dark:bg-gray-800">
-              <tr>
-                <td class="px-6 py-4">
-                  <input v-model="newValues[typeIndex]" @keyup.enter="addVariantValue(typeIndex)" type="text" :placeholder="`Mis: Merah, Biru...`" class="form-input w-full" />
+            <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+              
+              <tr class="bg-gray-50/30 dark:bg-gray-800/30">
+                <td class="px-5 py-3">
+                  <div class="relative">
+                    <input 
+                      v-model="newValues[typeIndex]" 
+                      @keyup.enter="addVariantValue(typeIndex)" 
+                      type="text" 
+                      :placeholder="`Contoh: Merah, XL...`" 
+                      class="form-input" 
+                    />
+                  </div>
                 </td>
-                <td class="px-6 py-4" colspan="2"></td>
-                <td class="px-6 py-4 text-center">
-                  <button @click="addVariantValue(typeIndex)" type="button" class="btn-primary w-full">Tambah</button>
+                <td class="px-5 py-3" colspan="2">
+                  <p class="text-xs text-gray-400 italic">Isi nama varian lalu tekan Enter atau tombol Tambah.</p>
                 </td>
-              </tr>
-              <tr v-for="(val, valIndex) in variant.values" :key="valIndex" class="transition-colors hover:bg-gray-50/50 dark:hover:bg-gray-700/50">
-                <td class="px-6 py-4 text-sm font-medium text-dark dark:text-base">{{ val.value }}</td>
-                <td class="px-6 py-4">
-                  <input v-model="val.sku" type="text" placeholder="SKU-UNIK" class="form-input w-full" />
-                </td>
-                <td class="px-6 py-4">
-                  <input :value="val.stock" @input="updateStock($event, val)" type="number" min="0" class="form-input w-24 text-right" />
-                </td>
-                <td class="px-6 py-4 text-center">
-                  <button @click="removeVariantValue(typeIndex, valIndex)" type="button" class="rounded-md p-1 text-red-400 transition-colors hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500">
-                    <Icon name="lucide:x" class="h-4 w-4" />
+                <td class="px-5 py-3 text-center">
+                  <button 
+                    @click="addVariantValue(typeIndex)" 
+                    type="button" 
+                    class="inline-flex items-center justify-center rounded-lg bg-primary px-3 py-2 text-xs font-bold text-white shadow-sm hover:bg-primary/90 transition-all"
+                  >
+                    <Icon name="lucide:plus" class="h-3 w-3 mr-1" /> Tambah
                   </button>
                 </td>
               </tr>
+
+              <tr v-for="(val, valIndex) in variant.values" :key="valIndex" class="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                <td class="px-5 py-3">
+                  <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ val.value }}</span>
+                </td>
+                <td class="px-5 py-3">
+                  <input 
+                    v-model="val.sku" 
+                    type="text" 
+                    placeholder="SKU-CODE" 
+                    class="form-input font-mono uppercase text-xs" 
+                  />
+                </td>
+                <td class="px-5 py-3 text-center">
+                  <input 
+                    :value="val.stock" 
+                    @input="updateStock($event, val)" 
+                    type="number" 
+                    min="0" 
+                    class="form-input w-24 text-center mx-auto" 
+                  />
+                </td>
+                <td class="px-5 py-3 text-center">
+                  <button 
+                    @click="removeVariantValue(typeIndex, valIndex)" 
+                    type="button" 
+                    class="text-gray-400 hover:text-red-500 transition-colors"
+                  >
+                    <Icon name="lucide:x-circle" class="h-5 w-5" />
+                  </button>
+                </td>
+              </tr>
+
+              <tr v-if="variant.values.length === 0">
+                <td colspan="4" class="px-5 py-6 text-center text-sm text-gray-400 italic">
+                  Belum ada nilai varian. Silakan tambahkan di atas.
+                </td>
+              </tr>
+
             </tbody>
           </table>
         </div>
       </div>
 
-      <div class="flex space-x-2 pt-6 border-t border-gray-200 dark:border-gray-700">
-        <input v-model="newVariantType" @keyup.enter="addVariantType" type="text" placeholder="Mis: Warna, Ukuran..." class="flex-1 form-input" />
-        <button @click="addVariantType" type="button" class="btn-primary">
-          <Icon name="lucide:plus" class="h-4 w-4 mr-2" />
-          Tambah Tipe Varian
-        </button>
+      <div class="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 dark:border-gray-600 dark:bg-gray-800/50">
+        <label class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">Buat Tipe Varian Baru</label>
+        <div class="flex gap-3">
+          <input 
+            v-model="newVariantType" 
+            @keyup.enter="addVariantType" 
+            type="text" 
+            placeholder="Contoh: Warna, Ukuran, Material..." 
+            class="form-input flex-1" 
+          />
+          <button 
+            @click="addVariantType" 
+            type="button" 
+            class="inline-flex items-center justify-center rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-black transition-all dark:bg-gray-700 dark:hover:bg-gray-600"
+            :disabled="!newVariantType"
+          >
+            <Icon name="lucide:plus-circle" class="h-4 w-4 mr-2" />
+            Buat Tipe
+          </button>
+        </div>
       </div>
+
     </div>
   </ProductCard>
 </template>
 
 <style scoped>
 .form-input {
-  @apply block w-full rounded-md border-muted/50 bg-secondary/20 px-4 py-2.5 text-sm text-dark placeholder:text-muted/50 dark:border-gray-600 dark:bg-gray-700 dark:text-sm dark:text-base dark:placeholder:text-muted/70 focus:border-primary focus:ring-1 focus:ring-primary;
+  @apply block w-full rounded-lg border-gray-200 bg-white py-2 px-3 text-sm text-gray-900 placeholder-gray-400 focus:border-primary focus:bg-white focus:ring-primary dark:border-gray-600 dark:bg-gray-900 dark:text-white dark:placeholder-gray-500 transition-all shadow-sm;
 }
-.btn-primary {
-  @apply inline-flex items-center justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary/80;
+
+/* Hide Spinners */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
 }
 </style>

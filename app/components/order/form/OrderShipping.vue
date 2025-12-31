@@ -6,7 +6,6 @@ import type { ShippingInfo } from "~/types/order";
 const shipping = defineModel<Partial<ShippingInfo>>({ required: true });
 const props = defineProps<{ weight: number }>();
 
-// Menggunakan getSubdistricts sesuai update composable terakhir
 const { getProvinces, getCities, getSubdistricts, checkRates } = useOrders();
 
 // State Data Wilayah
@@ -21,8 +20,8 @@ const selectedSubdistrict = ref("");
 
 // State Ongkir
 const shippingCosts = ref<any[]>([]);
-const isLoading = ref(false); // Loading wilayah
-const isLoadingCost = ref(false); // Loading ongkir
+const isLoading = ref(false); 
+const isLoadingCost = ref(false);
 const errorMessage = ref("");
 
 // 1. Load Provinsi
@@ -77,7 +76,6 @@ watch(selectedCity, async (newVal) => {
 watch(selectedSubdistrict, (newVal) => {
   if (!newVal) return;
 
-  // Helper cari nama (handle variasi properti id/province_id)
   const provData = provinces.value.find((p) => (p.province_id || p.id) == selectedProv.value);
   const cityData = cities.value.find((c) => (c.city_id || c.id) == selectedCity.value);
   const distData = subdistricts.value.find((d) => (d.subdistrict_id || d.id) == newVal);
@@ -86,14 +84,13 @@ watch(selectedSubdistrict, (newVal) => {
   const cityName = cityData?.city_name || cityData?.name;
   const distName = distData?.subdistrict_name || distData?.name;
 
-  // Simpan ke model
   shipping.value.cityId = newVal.toString();
   shipping.value.fullAddress = `${distName}, ${cityName}, ${provName}`;
 
   handleCheckRates(newVal.toString());
 });
 
-// --- 3. Cek Ongkir (FIX PARSING) ---
+// --- Cek Ongkir ---
 const handleCheckRates = async (districtId: string) => {
   if (props.weight <= 0) {
     errorMessage.value = "Berat 0, isi keranjang dulu.";
@@ -106,38 +103,26 @@ const handleCheckRates = async (districtId: string) => {
 
   try {
     const res: any = await checkRates(districtId, props.weight);
-
-    // --- DEBUGGING FRONTEND ---
-    // Cek Console Browser (F12) untuk melihat struktur asli data
-    console.log("📦 Data dari Backend:", res);
-
     const flatCosts: any[] = [];
 
     if (Array.isArray(res)) {
-      // Loop setiap item dalam array
       res.forEach((item: any) => {
-        // SKENARIO 1: Data sudah FLAT (Langsung layanan)
-        // Ciri: Punya properti 'price' atau 'cost' di root item, dan TIDAK punya array 'costs'
-        // Kemungkinan struktur Komerce: { name: "JNE", service: "REG", price: 20000, ... }
         if (item.costs === undefined) {
           flatCosts.push({
-            name: item.name || item.code?.toUpperCase(), // Nama Kurir
-            service: item.service, // Nama Layanan
+            name: item.name || item.code?.toUpperCase(),
+            code: item.code,
+            service: item.service,
             description: item.description || item.service,
-            price: item.price || item.cost || 0, // Harga
-            etd: item.etd || "-", // Estimasi
+            price: item.price || item.cost || 0,
+            etd: item.etd || "-",
           });
-        }
-
-        // SKENARIO 2: Data masih NESTED (Standar RajaOngkir)
-        // Ciri: Punya array 'costs'
-        else if (item.costs && Array.isArray(item.costs)) {
+        } else if (item.costs && Array.isArray(item.costs)) {
           item.costs.forEach((service: any) => {
             flatCosts.push({
               name: item.name,
+              code: item.code,
               service: service.service,
               description: service.description,
-              // RajaOngkir standar: cost adalah array, ambil index 0
               price: service.cost[0].value,
               etd: service.cost[0].etd,
             });
@@ -146,9 +131,7 @@ const handleCheckRates = async (districtId: string) => {
       });
     }
 
-    // Urutkan dari yang termurah
     flatCosts.sort((a, b) => a.price - b.price);
-
     shippingCosts.value = flatCosts;
 
     if (shippingCosts.value.length === 0) {
@@ -161,7 +144,7 @@ const handleCheckRates = async (districtId: string) => {
     isLoadingCost.value = false;
   }
 };
-// Pilih Layanan
+
 const selectService = (rate: any) => {
   shipping.value = {
     ...shipping.value,
@@ -173,7 +156,6 @@ const selectService = (rate: any) => {
   };
 };
 
-// Watch berat (re-calc)
 watch(
   () => props.weight,
   (newVal) => {
@@ -187,127 +169,203 @@ const formatRp = (val: number) => val.toLocaleString("id-ID");
 </script>
 
 <template>
-  <div class="rounded-lg border border-muted/30 bg-white p-6 shadow-sm dark:bg-gray-800 dark:border-gray-700">
-    <h3 class="mb-4 text-lg font-bold text-dark dark:text-white flex items-center gap-2">
-      <Icon name="lucide:truck" class="h-5 w-5 text-primary" />
-      Pengiriman
-    </h3>
+  <div class="relative overflow-visible rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+    <div class="border-b border-gray-100 bg-gray-50/50 p-4 dark:border-gray-700 dark:bg-gray-800/50 rounded-t-xl">
+      <h3 class="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-gray-700 dark:text-gray-200">
+        <Icon name="lucide:truck" class="h-4 w-4" />
+        Pengiriman
+      </h3>
+    </div>
 
-    <div class="space-y-4">
+    <div class="p-4 space-y-5">
+      
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
-          <label class="label-text">Nama Penerima</label>
-          <input v-model="shipping.recipientName" type="text" class="form-input" placeholder="Nama Lengkap" />
+          <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            Nama Penerima
+          </label>
+          <div class="relative">
+            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+              <Icon name="lucide:user" class="h-4 w-4" />
+            </div>
+            <input 
+              v-model="shipping.recipientName" 
+              type="text" 
+              class="w-full rounded-lg border-gray-200 bg-white py-2.5 pl-10 pr-10 text-sm shadow-sm transition-all focus:border-primary focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+              placeholder="Nama Lengkap" 
+            />
+          </div>
         </div>
         <div>
-          <label class="label-text">No. Telepon</label>
-          <input v-model="shipping.recipientPhone" type="text" class="form-input" placeholder="08..." />
+          <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            No. Telepon
+          </label>
+          <div class="relative">
+            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+              <Icon name="lucide:phone" class="h-4 w-4" />
+            </div>
+            <input 
+              v-model="shipping.recipientPhone" 
+              type="text" 
+             class="w-full rounded-lg border-gray-200 bg-white py-2.5 pl-10 pr-10 text-sm shadow-sm transition-all focus:border-primary focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+              placeholder="08..." 
+            />
+          </div>
         </div>
       </div>
 
       <div>
-        <label class="label-text">Alamat Lengkap (Jalan/RT/RW)</label>
-        <textarea v-model="shipping.fullAddress" rows="2" class="form-input" placeholder="Detail alamat..."></textarea>
+        <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+          Alamat Lengkap
+        </label>
+        <div class="relative">
+          <textarea 
+            v-model="shipping.fullAddress" 
+            rows="2" 
+            class="w-full rounded-lg border-gray-200 bg-white py-2.5 pl-10 pr-10 text-sm shadow-sm transition-all focus:border-primary focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+            placeholder="Jalan, RT/RW, No. Rumah..."
+          ></textarea>
+          <div class="absolute left-3 top-3 text-gray-400">
+            <Icon name="lucide:map-pin" class="h-4 w-4" />
+          </div>
+        </div>
       </div>
 
       <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div>
-          <label class="label-text">Provinsi</label>
-          <select v-model="selectedProv" class="form-input" :disabled="isLoading">
-            <option value="" disabled>Pilih Provinsi</option>
-            <option v-for="p in provinces" :key="p.province_id || p.id" :value="p.province_id || p.id">
-              {{ p.province || p.name }}
-            </option>
-          </select>
+          <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Provinsi</label>
+          <div class="relative">
+            <select v-model="selectedProv" class="form-select" :disabled="isLoading">
+              <option value="" disabled>Pilih Provinsi</option>
+              <option v-for="p in provinces" :key="p.province_id || p.id" :value="p.province_id || p.id">
+                {{ p.province || p.name }}
+              </option>
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+              <Icon v-if="isLoading && provinces.length === 0" name="lucide:loader-2" class="h-4 w-4 animate-spin" />
+              <Icon v-else name="lucide:chevron-down" class="h-4 w-4" />
+            </div>
+          </div>
         </div>
 
         <div>
-          <label class="label-text">Kota/Kab</label>
-          <select v-model="selectedCity" class="form-input" :disabled="!selectedProv || isLoading">
-            <option value="" disabled>Pilih Kota</option>
-            <option v-for="c in cities" :key="c.city_id || c.id" :value="c.city_id || c.id">{{ c.type }} {{ c.city_name || c.name }}</option>
-          </select>
+          <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Kota/Kab</label>
+          <div class="relative">
+            <select v-model="selectedCity" class="form-select" :disabled="!selectedProv || isLoading">
+              <option value="" disabled>Pilih Kota</option>
+              <option v-for="c in cities" :key="c.city_id || c.id" :value="c.city_id || c.id">
+                {{ c.type }} {{ c.city_name || c.name }}
+              </option>
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+              <Icon v-if="isLoading && cities.length === 0 && selectedProv" name="lucide:loader-2" class="h-4 w-4 animate-spin" />
+              <Icon v-else name="lucide:chevron-down" class="h-4 w-4" />
+            </div>
+          </div>
         </div>
 
         <div>
-          <label class="label-text">Kecamatan</label>
-          <select v-model="selectedSubdistrict" class="form-input" :disabled="!selectedCity || isLoading">
-            <option value="" disabled>Pilih Kecamatan</option>
-            <option v-for="d in subdistricts" :key="d.subdistrict_id || d.id" :value="d.subdistrict_id || d.id">
-              {{ d.subdistrict_name || d.name }}
-            </option>
-          </select>
+          <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Kecamatan</label>
+          <div class="relative">
+            <select v-model="selectedSubdistrict" class="form-select" :disabled="!selectedCity || isLoading">
+              <option value="" disabled>Pilih Kecamatan</option>
+              <option v-for="d in subdistricts" :key="d.subdistrict_id || d.id" :value="d.subdistrict_id || d.id">
+                {{ d.subdistrict_name || d.name }}
+              </option>
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+              <Icon v-if="isLoading && subdistricts.length === 0 && selectedCity" name="lucide:loader-2" class="h-4 w-4 animate-spin" />
+              <Icon v-else name="lucide:chevron-down" class="h-4 w-4" />
+            </div>
+          </div>
         </div>
       </div>
 
       <div v-if="shipping.cityId" class="pt-2">
-        <div v-if="isLoadingCost" class="py-6 text-center border rounded-md border-dashed border-muted/30">
-          <Icon name="lucide:loader-2" class="animate-spin h-5 w-5 text-muted mx-auto" />
-          <p class="text-xs text-muted mt-2">Mengecek tarif kurir...</p>
-        </div>
-
-        <div v-else-if="errorMessage" class="p-3 text-center text-xs text-red-500 bg-red-50 rounded border border-red-100">
-          {{ errorMessage }}
-        </div>
-
-        <div v-else-if="shippingCosts.length > 0" class="space-y-2">
-          <div class="mb-2 flex items-center justify-between border-t border-muted/20 pt-4">
-            <label class="block text-xs font-bold uppercase text-muted">Pilih Layanan ({{ shippingCosts.length }})</label>
-            <span v-if="shipping.cost" class="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded"> {{ shipping.courier }} - Rp {{ formatRp(shipping.cost) }} </span>
+        <transition name="fade" mode="out-in">
+          
+          <div v-if="isLoadingCost" class="flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 py-8 dark:border-gray-600 dark:bg-gray-800/50">
+            <Icon name="lucide:loader-2" class="h-6 w-6 animate-spin text-primary" />
+            <p class="mt-2 text-xs font-medium text-gray-500">Mengecek tarif kurir...</p>
           </div>
 
-          <div class="max-h-80 overflow-y-auto custom-scrollbar pr-1 space-y-2">
-            <div
-              v-for="(rate, i) in shippingCosts"
-              :key="i"
-              @click="selectService(rate)"
-              class="cursor-pointer rounded-lg border p-3 transition-all hover:border-primary relative overflow-hidden"
-              :class="shipping.service === rate.service && shipping.courier === rate.name ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-muted/30 bg-white dark:bg-gray-900'"
-            >
-              <div class="flex justify-between items-center relative z-10">
-                <div class="flex items-center gap-3">
-                  <div class="flex h-9 w-12 items-center justify-center rounded bg-gray-100 text-dark dark:bg-gray-800 dark:text-gray-300 font-bold text-[10px] uppercase border border-muted/20">
-                    {{ rate.code ? rate.code.slice(0, 3) : "EXP" }}
-                  </div>
-                  <div>
-                    <div class="flex items-center gap-2">
-                      <span class="font-bold text-dark dark:text-white text-sm">{{ rate.name }}</span>
-                      <span class="text-[10px] font-mono bg-gray-200 px-1.5 rounded dark:bg-gray-700 text-dark dark:text-gray-300">{{ rate.service }}</span>
-                    </div>
-                    <p class="text-xs text-muted mt-0.5">Estimasi: {{ rate.etd ? rate.etd.replace("HARI", "").replace("Hari", "") : "-" }} Hari</p>
-                  </div>
-                </div>
-                <div class="text-right">
-                  <p class="text-sm font-bold text-primary">Rp {{ formatRp(rate.price) }}</p>
-                </div>
-              </div>
+          <div v-else-if="errorMessage" class="rounded-lg border border-red-100 bg-red-50 p-4 text-center dark:border-red-900/30 dark:bg-red-900/10">
+            <p class="text-sm font-medium text-red-600 dark:text-red-400">{{ errorMessage }}</p>
+          </div>
 
-              <div v-if="shipping.service === rate.service && shipping.courier === rate.name" class="absolute top-0 right-0 p-1 bg-primary rounded-bl-lg shadow-sm">
-                <Icon name="lucide:check" class="h-3 w-3 text-white" />
+          <div v-else-if="shippingCosts.length > 0" class="space-y-3">
+            <div class="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-gray-700">
+              <label class="text-xs font-bold uppercase tracking-wider text-gray-500">Pilih Layanan ({{ shippingCosts.length }})</label>
+              <transition name="fade">
+                <span v-if="shipping.cost" class="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-bold text-primary ring-1 ring-inset ring-primary/20">
+                  {{ shipping.courier }} - Rp {{ formatRp(shipping.cost || 0) }}
+                </span>
+              </transition>
+            </div>
+
+            <div class="max-h-80 space-y-2 overflow-y-auto pr-1">
+              <div
+                v-for="(rate, i) in shippingCosts"
+                :key="i"
+                @click="selectService(rate)"
+                class="group relative cursor-pointer overflow-hidden rounded-xl border p-3 transition-all duration-200 hover:border-primary hover:shadow-sm"
+                :class="shipping.service === rate.service && shipping.courier === rate.name 
+                  ? 'border-primary bg-primary/5 ring-1 ring-primary dark:bg-primary/10' 
+                  : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'"
+              >
+                <div class="relative z-10 flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="flex h-10 w-12 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-[10px] font-bold uppercase text-gray-700 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200">
+                      {{ rate.code ? rate.code.slice(0, 3) : "EXP" }}
+                    </div>
+                    
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <span class="text-sm font-bold text-gray-900 dark:text-white">{{ rate.name }}</span>
+                        <span class="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[10px] font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                          {{ rate.service }}
+                        </span>
+                      </div>
+                      <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                        Estimasi: {{ rate.etd ? rate.etd.replace("HARI", "").replace("Hari", "") : "-" }} Hari
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="text-right">
+                    <p class="text-sm font-bold text-primary">Rp {{ formatRp(rate.price) }}</p>
+                  </div>
+                </div>
+
+                <div v-if="shipping.service === rate.service && shipping.courier === rate.name" class="absolute right-0 top-0 rounded-bl-lg bg-primary p-1 shadow-sm">
+                  <Icon name="lucide:check" class="h-3 w-3 text-white" />
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </transition>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.label-text {
-  @apply mb-1 block text-xs font-bold uppercase text-muted;
-}
+/* Custom Styles for Inputs to match Theme */
 .form-input {
-  @apply w-full rounded-md border-muted/50 bg-gray-50 p-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary dark:bg-gray-900 dark:border-gray-700 dark:text-white;
+  @apply block w-full rounded-lg border-gray-200 bg-white py-2.5 text-sm text-gray-900 focus:border-primary focus:bg-white focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all;
 }
-.custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
+
+.form-select {
+  @apply block w-full appearance-none rounded-lg border-gray-200 bg-white py-2.5 pl-4 pr-10 text-sm font-medium text-gray-900 focus:border-primary focus:bg-white focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-all;
 }
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
+
+/* Transitions */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
 }
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(156, 163, 175, 0.3);
-  border-radius: 20px;
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

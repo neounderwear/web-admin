@@ -4,8 +4,6 @@ import { useRouter } from "vue-router";
 import { Vue3Lottie } from "vue3-lottie";
 import { useAuth } from "~/composables/useAuth";
 import { useToast } from "~/composables/useToast";
-
-// Import Lottie Assets
 import warehouseAnim from "~/assets/animation/warehouse.json";
 import analyticsAnim from "~/assets/animation/analytics.json";
 import shippingAnim from "~/assets/animation/shipping.json";
@@ -18,7 +16,7 @@ const router = useRouter();
 const { login } = useAuth();
 const { showSuccess, showError } = useToast();
 
-// --- LOGIKA TEMA (BARU) ---
+// Tema
 const colorMode = useColorMode();
 const toggleTheme = () => {
   colorMode.preference = colorMode.value === "dark" ? "light" : "dark";
@@ -29,14 +27,14 @@ const password = ref("");
 const loading = ref(false);
 const showPassword = ref(false);
 
-// --- LOGIKA LOGIN ---
+// Login
 const handleLogin = async () => {
   if (!email.value || !password.value) return;
 
   loading.value = true;
   try {
     await login(email.value, password.value);
-    showSuccess("Berhasil masuk!");
+    showSuccess("Berhasil masuk! Mengalihkan...");
     setTimeout(() => {
       router.push("/dashboard");
     }, 1500);
@@ -45,27 +43,27 @@ const handleLogin = async () => {
     if (e.code === "auth/invalid-credential" || e.code === "auth/user-not-found" || e.code === "auth/wrong-password") {
       msg = "Email atau password salah.";
     } else if (e.code === "auth/too-many-requests") {
-      msg = "Terlalu banyak percobaan. Tunggu beberapa saat.";
+      msg = "Terlalu banyak percobaan. Silakan coba lagi nanti.";
     }
     showError(msg);
     loading.value = false;
   }
 };
 
-// --- LOGIKA SLIDER LOTTIE ---
+// Slider ilustrasi
 const activeSlide = ref(0);
 let slideInterval: NodeJS.Timeout;
 
 const slides = [
-  { id: 1, text: "Mudah", subtext: "Kelola stok, pesanan, dan lainnya dari satu tempat", lottieData: warehouseAnim },
-  { id: 2, text: "Ringkas dan Tepat", subtext: "Dapatkan laporan bisnis secara ringkas dan tepat", lottieData: analyticsAnim },
-  { id: 3, text: "Terintegrasi", subtext: "Dilengkapi dengan pembayaran dan pengiriman terintegrasi", lottieData: shippingAnim },
+  { id: 1, text: "Manajemen Gudang Terpusat", subtext: "Kelola stok, varian, dan inventaris pakaian dalam dengan mudah dari satu dashboard.", lottieData: warehouseAnim },
+  { id: 2, text: "Analisis Bisnis Real-time", subtext: "Pantau performa penjualan dan tren pasar melalui grafik yang interaktif.", lottieData: analyticsAnim },
+  { id: 3, text: "Pengiriman Terintegrasi", subtext: "Lacak status pengiriman pesanan pelanggan secara otomatis dan akurat.", lottieData: shippingAnim },
 ];
 
 onMounted(() => {
   slideInterval = setInterval(() => {
     activeSlide.value = (activeSlide.value + 1) % slides.length;
-  }, 5000);
+  }, 6000);
 });
 
 onUnmounted(() => {
@@ -74,69 +72,75 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="relative flex min-h-screen w-full overflow-hidden bg-gray-50 dark:bg-gray-950 transition-colors duration-500">
-    <div class="absolute top-6 right-6 z-50">
+  <div class="flex min-h-screen w-full bg-white dark:bg-gray-950 transition-colors duration-500">
+    <!-- Toggle tema -->
+    <div class="fixed top-6 right-6 z-50">
       <button
         @click="toggleTheme"
-        class="flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-dark shadow-sm backdrop-blur-sm transition-all hover:bg-white hover:scale-110 dark:bg-gray-800/80 dark:text-white dark:hover:bg-gray-800"
+        class="group flex h-10 w-10 items-center justify-center rounded-full bg-white/50 text-gray-600 shadow-lg backdrop-blur-md ring-1 ring-gray-900/5 transition-all hover:scale-110 hover:bg-white hover:text-primary dark:bg-gray-800/50 dark:text-gray-300 dark:ring-white/10 dark:hover:bg-gray-800 dark:hover:text-white"
         aria-label="Ganti Tema"
       >
         <ClientOnly>
-          <Icon :name="colorMode.value === 'dark' ? 'lucide:moon' : 'lucide:sun'" class="h-5 w-5 transition-transform duration-500 rotate-0 dark:-rotate-180" />
+          <Icon 
+            :name="colorMode.value === 'dark' ? 'lucide:moon' : 'lucide:sun'" 
+            class="h-5 w-5 transition-transform duration-500 group-hover:rotate-12" 
+          />
         </ClientOnly>
       </button>
     </div>
 
-    <div class="flex w-full flex-col justify-center px-6 py-12 sm:px-12 lg:w-1/2 xl:w-5/12 bg-white dark:bg-gray-900 shadow-2xl z-10 transition-colors duration-500">
+    <!-- Form login -->
+    <div class="flex w-full flex-col justify-center px-6 py-12 lg:w-[480px] xl:w-[550px] bg-white dark:bg-gray-950 z-10 relative">
       <div class="mx-auto w-full max-w-sm">
-        <div class="mb-8">
-          <div class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-white mb-4 shadow-lg shadow-primary/30">
-            <Icon name="lucide:box" class="h-6 w-6" />
+        <div class="mb-10">
+          <div class="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 mb-6 shadow-lg shadow-primary/20 p-2.5">
+            <img 
+              src="~/assets/images/logo.png" 
+              alt="Logo Aplikasi" 
+              class="h-full w-full object-contain" 
+            />
           </div>
-          <h2 class="text-2xl font-bold text-dark dark:text-white">Halo, Admin!</h2>
-          <p class="mt-1 text-sm text-muted">Masuk buat lanjut</p>
+          <h1 class="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">Halo!</h1>
+          <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Silakan login buat lanjut</p>
         </div>
 
-        <form @submit.prevent="handleLogin" class="space-y-5">
-          <div>
-            <label for="email" class="mb-1.5 block text-xs font-bold uppercase text-muted tracking-wider">Email</label>
-            <div class="relative group">
-              <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <Icon name="lucide:mail" class="h-5 w-5 text-muted group-focus-within:text-primary transition-colors" />
+        <form @submit.prevent="handleLogin" class="space-y-6">
+          <div class="space-y-1.5">
+            <label for="email" class="block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Email</label>
+            <div class="group relative">
+              <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                <Icon name="lucide:mail" class="h-5 w-5 text-gray-400 transition-colors group-focus-within:text-primary" />
               </div>
               <input
                 v-model="email"
                 id="email"
                 type="email"
                 required
-                class="block w-full rounded-lg border border-gray-200 bg-gray-50 p-2.5 pl-10 text-sm text-dark placeholder:text-gray-400 focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20 transition-all dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:focus:bg-gray-900"
-                placeholder="masukkan email kamu"
+                class="block w-full rounded-xl border border-gray-200 bg-gray-50/50 p-3 pl-10 text-sm text-gray-900 placeholder-gray-400 transition-all focus:border-primary focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:placeholder-gray-500 dark:focus:bg-gray-950"
+                placeholder="nama@email.com"
               />
             </div>
           </div>
-
-          <div>
-            <div class="flex justify-between items-center mb-1.5">
-              <label for="password" class="block text-xs font-bold uppercase text-muted tracking-wider">Password</label>
+          <div class="space-y-1.5">
+            <div class="flex justify-between items-center">
+               <label for="password" class="block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Password</label>
             </div>
-            <div class="relative group">
-              <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <Icon name="lucide:lock" class="h-5 w-5 text-muted group-focus-within:text-primary transition-colors" />
+            <div class="group relative">
+              <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                <Icon name="lucide:lock" class="h-5 w-5 text-gray-400 transition-colors group-focus-within:text-primary" />
               </div>
-
               <input
                 v-model="password"
                 id="password"
                 :type="showPassword ? 'text' : 'password'"
                 required
-                class="block w-full rounded-lg border border-gray-200 bg-gray-50 p-2.5 pl-10 pr-10 text-sm text-dark placeholder:text-gray-400 focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20 transition-all dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:focus:bg-gray-900"
+                class="block w-full rounded-xl border border-gray-200 bg-gray-50/50 p-3 pl-10 pr-10 text-sm text-gray-900 placeholder-gray-400 transition-all focus:border-primary focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:placeholder-gray-500 dark:focus:bg-gray-950"
                 placeholder="••••••••"
               />
-
               <button
                 type="button"
                 @click="showPassword = !showPassword"
-                class="absolute inset-y-0 right-0 flex items-center pr-3 text-muted hover:text-dark dark:hover:text-white transition-colors cursor-pointer focus:outline-none"
+                class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors focus:outline-none"
                 tabindex="-1"
               >
                 <Icon :name="showPassword ? 'lucide:eye-off' : 'lucide:eye'" class="h-5 w-5" />
@@ -147,73 +151,87 @@ onUnmounted(() => {
           <button
             type="submit"
             :disabled="loading"
-            class="relative flex w-full items-center justify-center overflow-hidden rounded-lg bg-primary px-4 py-3 text-sm font-bold text-white shadow-lg shadow-primary/30 transition-all hover:bg-primary/90 hover:shadow-primary/50 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0"
+            class="relative flex w-full items-center justify-center overflow-hidden rounded-xl bg-primary px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/25 transition-all hover:bg-primary/90 hover:shadow-primary/40 hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-70 disabled:shadow-none"
           >
             <span v-if="loading" class="flex items-center gap-2">
               <Icon name="lucide:loader-2" class="h-4 w-4 animate-spin" />
-              Memverifikasi...
             </span>
-            <span v-else>Masuk</span>
+            <span v-else>Login</span>
           </button>
         </form>
 
-        <p class="mt-8 text-center text-xs text-muted opacity-60">&copy; 2025 Gudang Pakaian Dalam | Admin</p>
+        <p class="mt-12 text-center text-xs text-gray-400 dark:text-gray-600">
+          &copy; {{ new Date().getFullYear() }} | CV GUDANG PAKAIAN DALAM
+        </p>
       </div>
     </div>
 
-    <div class="relative hidden w-0 flex-1 lg:flex items-center justify-center bg-gray-50 dark:bg-gray-950 overflow-hidden transition-colors duration-500">
-      <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent"></div>
-      <div class="absolute bottom-0 left-0 h-96 w-96 rounded-full bg-accent/5 blur-3xl"></div>
-
-      <div class="relative w-full max-w-md text-center p-10">
-        <transition-group name="slide-fade" tag="div" class="relative h-[450px] w-full">
-          <div v-for="(slide, index) in slides" :key="slide.id" v-show="activeSlide === index" class="absolute inset-0 flex flex-col items-center justify-center">
-            <div class="h-72 w-72 mb-8 drop-shadow-xl">
+    <!-- Ilustrasi -->
+    <div class="relative hidden w-0 flex-1 lg:flex items-center justify-center bg-gray-50 dark:bg-gray-900 overflow-hidden transition-colors duration-500">
+      <div class="absolute inset-0 bg-primary/5 dark:bg-primary/10"></div>
+      <div class="absolute -top-24 -right-24 h-96 w-96 rounded-full bg-primary/20 blur-3xl opacity-50 dark:opacity-30"></div>
+      <div class="absolute bottom-0 left-0 h-96 w-96 rounded-full bg-purple-500/10 blur-3xl opacity-50 dark:opacity-20"></div>
+      <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+      <div class="relative w-full max-w-lg text-center p-12 z-10">
+        <transition-group name="slide-up" tag="div" class="relative h-[500px] w-full flex items-center justify-center">
+          <div 
+            v-for="(slide, index) in slides" 
+            :key="slide.id" 
+            v-show="activeSlide === index" 
+            class="absolute inset-0 flex flex-col items-center justify-center"
+          >
+            <div class="h-80 w-80 mb-8 drop-shadow-2xl transition-all duration-500 transform hover:scale-105">
               <ClientOnly>
-                <Vue3Lottie :animationData="slide.lottieData" :height="280" :width="280" />
+                <Vue3Lottie :animationData="slide.lottieData" :height="320" :width="320" />
               </ClientOnly>
             </div>
 
-            <h3 class="text-2xl font-bold text-dark dark:text-white mb-2 transition-colors duration-500">{{ slide.text }}</h3>
-            <p class="text-muted dark:text-gray-400 leading-relaxed transition-colors duration-500">{{ slide.subtext }}</p>
+            <h3 class="text-3xl font-extrabold text-gray-900 dark:text-white mb-4 tracking-tight">
+              {{ slide.text }}
+            </h3>
+            <p class="text-gray-500 dark:text-gray-400 leading-relaxed max-w-sm mx-auto text-base">
+              {{ slide.subtext }}
+            </p>
           </div>
         </transition-group>
-
-        <div class="flex justify-center space-x-2 mt-4">
+        <div class="flex justify-center space-x-2 mt-8">
           <button
             v-for="(_, index) in slides"
             :key="index"
             @click="activeSlide = index"
-            class="h-1.5 rounded-full transition-all duration-500"
-            :class="activeSlide === index ? 'w-6 bg-primary' : 'w-1.5 bg-gray-300 dark:bg-gray-700'"
+            class="h-2 rounded-full transition-all duration-500 ease-out"
+            :class="activeSlide === index ? 'w-8 bg-primary shadow-sm shadow-primary/50' : 'w-2 bg-gray-300 dark:bg-gray-700 hover:bg-gray-400'"
+            :aria-label="`Go to slide ${index + 1}`"
           ></button>
         </div>
       </div>
     </div>
-
     <Toast />
   </div>
 </template>
 
 <style scoped>
-/* Animasi Slide yang lebih halus */
-.slide-fade-enter-active,
-.slide-fade-leave-active {
-  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.slide-fade-enter-from {
-  opacity: 0;
-  transform: translateY(20px) scale(0.95);
-}
-
-.slide-fade-leave-to {
-  opacity: 0;
-  transform: translateY(-20px) scale(1.05);
-}
-
-.slide-fade-leave-active {
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
   position: absolute;
   width: 100%;
+}
+
+.slide-up-enter-from {
+  opacity: 0;
+  transform: translateY(40px) scale(0.95);
+  filter: blur(4px);
+}
+
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(-40px) scale(1.05);
+  filter: blur(4px);
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
 }
 </style>
